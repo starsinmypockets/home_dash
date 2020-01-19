@@ -8,29 +8,30 @@ const sequelize = new Sequelize(DB_NAME, DB_USER, DB_PASS, {
 
 const Model = Sequelize.Model
 
+// TODO 
+const sensorConfig = require('./sensorConfig.json')
+
 class Record extends Model {}
 Record.init(
   {
     // the sensor type -- eg: "temperature sensor"
-    // @@TODO should be fk to a sensor model
+    // TODO should be fk to a sensor model
     type: {
       type: Sequelize.STRING,
       allowNull: false
     },
-    // primary key
     // sensor instance name, eg: "Kitchen smoke detector"
     name: {
       type: Sequelize.STRING,
-      primaryKey: true
     },
     // Units
     units: {
-      type: Sequlize.STRING
+      type: Sequelize.STRING
     },
     // sensor value
-    // @@TODO handle units, typed values will be much more useful
+    // TODO handle units, typed values will be much more useful
     value: {
-      type: Sequlize.STRING
+      type: Sequelize.STRING
     }
   },
   {

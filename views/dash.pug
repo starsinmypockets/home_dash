@@ -1,0 +1,9 @@
+html
+  h1 Home Dash
+  each sensor in sensors
+    h2 #{sensor.name}
+    h3 #{sensor.type}
+    p
+      strong Value: 
+      span(class="sensor-value")  #{sensor.value}
+      span(class="sensor-units")  #{sensor.units}
