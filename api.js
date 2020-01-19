@@ -1,11 +1,13 @@
-require('dotenv').config()
+require("dotenv").config()
 
 const express = require("express")
+const bodyParser = require("body-parser")
 const app = express()
 const Model = require("./db.js")
-const winston = require("winston")
 
-app.set('view engine', 'pug')
+app.set("view engine", "pug")
+
+app.use(bodyParser.json())
 
 app.get("/test", (req, res) => {
   res.json({ message: "Hello world" })
@@ -44,10 +46,23 @@ app.get("/", (req, res) => {
     ]
   }
 
-  res.render("dash.pug", {...info} )
+  res.render("dash.pug", { ...info })
 })
 
-app.post("/new", (req, res) => {})
+// Create new records
+// **NOTE** always use array of records [{...record},...]
+app.post("/new", async (req, res) => {
+  const Record = Model.Record
+
+  try {
+    console.log(req.body)
+    await Record.bulkCreate(req.body)
+    return res.json({ success: true })
+  } catch (e) {
+    console.error("Failed to create Record", e)
+    return req.error("Failed to create Record " + e)
+  }
+})
 
 app.listen(8099, () => {
   console.log("Listening on port 8099")
