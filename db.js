@@ -1,15 +1,14 @@
+const conf = require('dotenv').config()
 const Sequelize = require("sequelize")
 
-const { DB_NAME, DB_USER, DB_PASS } = process.env
-const sequelize = new Sequelize(DB_NAME, DB_USER, DB_PASS, {
+console.log(conf)
+const { DB_NAME, DB_USER, DB_PASSWORD } = conf.parsed
+const sequelize = new Sequelize(DB_NAME, DB_USER, DB_PASSWORD, {
   host: "localhost",
   dialect: "mysql"
 })
 
 const Model = Sequelize.Model
-
-// TODO 
-const sensorConfig = require('./sensorConfig.json')
 
 class Record extends Model {}
 Record.init(
@@ -36,15 +35,16 @@ Record.init(
   },
   {
     sequelize,
-    modelName: "record"
+    modelName: "data"
   }
 )
 
 Record.sync({ force: true }).then(() => {
   return Record.create({
-    name: "TEMP-1",
-    type: "CHID IP",
-    units: "degrees celsius"
+    name: "Sensor 1",
+    type: "temp",
+    units: "degrees celsius",
+    value: "125"
   })
 })
 
