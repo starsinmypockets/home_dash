@@ -39,12 +39,12 @@ Record.init(
   }
 )
 
-Record.sync({ force: true }).then(() => {
+Record.sync().then(() => {
   return Record.create({
-    name: "Sensor 1",
-    type: "temp",
-    units: "degrees celsius",
-    value: "125"
+    name: "test name",
+    type: "test sensor",
+    units: "test units",
+    value: "test val"
   })
 })
 

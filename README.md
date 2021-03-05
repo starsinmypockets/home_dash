@@ -39,3 +39,19 @@ cp `sample.env` to `.env` and update with your db creds
 
 `yarn start`
 
+## ENPOINTS
+
+### POST /new
+
+  Array of new records to enter:
+  JSON BODY:
+  ```json
+  [
+    {
+      "name":"foo",
+      "type":"bar",
+      "units":"baz",
+      "value":"123"
+    }
+  ]
+  ```
