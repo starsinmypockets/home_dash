@@ -5,7 +5,7 @@
   
   const char* ssid = "633N40_2.4"; //replace with your own wifi ssid
   const char* password = "hashbrowns"; //replace with your own //wifi ssid password const char*
-  const int oneWireBus = 12;
+  const int oneWireBus = 2;
 
   OneWire oneWire(oneWireBus);
   DallasTemperature sensors(&oneWire);
@@ -45,10 +45,9 @@
     char tmpC[100];
     
     sprintf(tmpC, "Temperature ºC: %f\n", _tmpC);
-    sprintf(tmpF, "[{\"name\":\"office\",\"type\":\"temperature\",\"units\":\"F\",\"value\":\"%f\"}]", _tmpF);
+    sprintf(tmpCJson, "[{\"name\":\"office\",\"type\":\"temperature\",\"units\":\"F\",\"value\":\"%f\"}]", _tmpF);
 
     Serial.print(tmpC);
-    Serial.print(tmpF);
 
     HTTPClient http;
   
