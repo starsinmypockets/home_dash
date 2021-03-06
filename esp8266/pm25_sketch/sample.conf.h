@@ -1,0 +1,2 @@
+const char* WIFI_SSID="WIFI_NETWORK";
+const char* WIFI_PASS="YOURPASSWORD";
