@@ -9,19 +9,19 @@ API for managing home automation and sensors via ESP8266
 `yarn`
 
 ### Setup MYSQL database
-
-As root:
+You will need to setup a database table and user. Store db credentials in .env (see below).
 
 ```mysql
-# create database
-
 CREATE DATABASE home_dash;
-
-# create user
 CREATE USER 'home_dash'@'localhost' IDENTIFIED BY 'password';
 GRANT ALL PRIVILEGES ON * . home_dash TO 'home_dash'@'localhost';
+```
 
-# create database table
+### Setup db table
+The table should be created when the app is run for the first time.
+
+But just in case:
+```mysql
 CREATE TABLE IF NOT EXISTS home_dash.data (
     data_id INT AUTO_INCREMENT PRIMARY KEY,
     type VARCHAR(255) NOT NULL,
@@ -33,6 +33,7 @@ CREATE TABLE IF NOT EXISTS home_dash.data (
 ```
 
 ### Setup environment
+
 cp `sample.env` to `.env` and update with your db creds
 
 ## Start server
@@ -48,10 +49,10 @@ cp `sample.env` to `.env` and update with your db creds
   ```json
   [
     {
-      "name":"foo",
-      "type":"bar",
-      "units":"baz",
-      "value":"123"
+      "name":"Office",
+      "type":"PM2.5",
+      "units":"PM2.5",
+      "value":"2"
     }
   ]
   ```
