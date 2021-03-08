@@ -13,38 +13,140 @@ app.get("/test", (req, res) => {
 
 app.get("/", (req, res) => {
   // TODO fetch info from db
+  res.send("Hello world")
+})
 
-  // test info
-  const info = {
-    sensors: [
+app.get("/hourly", async (req, res) => {
+  // TODO -- from db.js:
+  res.json([
+    // each array represents a sensor / name combination
       {
-        type: "THERM-1a",
-        name: "Kitchen sensor-1",
-        units: "Degrees Celcius",
-        value: 22
+        name: "Office",
+        sensor: "PM2.5",
+        units: "PM2.5",
+        readings: [
+          {
+            time: 1614891600,// timestamp of period beginning
+            value: 2 // average for period
+          },
+          {
+            time: 1614978000,// timestamp of period beginning
+            value: 2 // average for period
+          },
+          {
+            time: 1615064400,// timestamp of period beginning
+            value: 4 // average for period
+          },
+          {
+            time: 1615150800,// timestamp of period beginning
+            value: 4 // average for period
+          },
+          {
+            time: 1615237200,// timestamp of period beginning
+            value: 3 // average for period
+          },
+          {
+            time: 1615323600,// timestamp of period beginning
+            value: 2 // average for period
+          },
+          {
+            time: 1615410000,// timestamp of period beginning
+            value: 1 // average for period
+          },
+          {
+            time: 1615496400,// timestamp of period beginning
+            value: 5 // average for period
+          },
+          {
+            time: 1615582800,// timestamp of period beginning
+            value: 2// average for period
+          },
+          {
+            time: 1615669200,// timestamp of period beginning
+            value: 2// average for period
+          },
+          {
+            time: 1615755600,// timestamp of period beginning
+            value: 6// average for period
+          },
+          {
+            time: 1615842000,// timestamp of period beginning
+            value: 5// average for period
+          },
+        ]
       },
       {
-        type: "THERM-1a",
-        name: "Bathroom sens",
-        units: "Degrees Celcius",
-        value: 24
-      },
-      {
-        type: "SMOKE",
-        name: "Kitchen Smoke Detector",
-        units: "Bool",
-        value: false
-      },
-      {
-        type: "Contact",
-        name: "Front Door Closed",
-        units: "Bool",
-        value: true
+        name: "Kitchen",
+        sensor: "PM2.5",
+        units: "PM2.5",
+        readings: [
+          {
+            time: 1614891600,// timestamp of period beginning
+            value: 2 // average for period
+          },
+          {
+            time: 1614978000,// timestamp of period beginning
+            value: 2 // average for period
+          },
+          {
+            time: 1615064400,// timestamp of period beginning
+            value: 4 // average for period
+          },
+          {
+            time: 1615150800,// timestamp of period beginning
+            value: 4 // average for period
+          },
+          {
+            time: 1615237200,// timestamp of period beginning
+            value: 3 // average for period
+          },
+          {
+            time: 1615323600,// timestamp of period beginning
+            value: 2 // average for period
+          },
+          {
+            time: 1615410000,// timestamp of period beginning
+            value: 1 // average for period
+          },
+          {
+            time: 1615496400,// timestamp of period beginning
+            value: 5 // average for period
+          },
+          {
+            time: 1615582800,// timestamp of period beginning
+            value: 2// average for period
+          },
+          {
+            time: 1615669200,// timestamp of period beginning
+            value: 2// average for period
+          },
+          {
+            time: 1615755600,// timestamp of period beginning
+            value: 6// average for period
+          },
+          {
+            time: 1615842000,// timestamp of period beginning
+            value: 5// average for period
+          },
+        ]
       }
-    ]
-  }
+    ],
+  )
+})
 
-  res.render("dash.pug", { ...info })
+app.get("/daily", async (req, res) => {
+  res.json({
+    
+  })
+
+})
+
+app.get("/weekly", async (req, res) => {
+
+})
+
+app.get("/monthly", async (req, res) => {
+
 })
 
 // Create new records

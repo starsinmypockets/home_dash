@@ -5,7 +5,7 @@
   "main": "api.js",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
-    "start": "node api.js"
+    "start": "node server/api.js"
   },
   "author": "",
   "license": "ISC",
@@ -17,5 +17,8 @@
     "pug": "^2.0.4",
     "sequelize": "^5.21.3",
     "winston": "^3.2.1"
+  },
+  "devDependencies": {
+    "prettier": "^2.2.1"
   }
 }
