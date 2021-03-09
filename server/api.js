@@ -3,7 +3,7 @@ const bodyParser = require("body-parser")
 const app = express()
 const cors = require('cors')
 const { Record } = require("./db.js")
-const { Op } = require("sequelize");
+const { Op, fn, col} = require("sequelize");
 
 app.use(cors())
 app.set("view engine", "pug")
@@ -14,27 +14,35 @@ app.get("/test", (req, res) => {
   res.json({ message: "Hello world" })
 })
 
-app.get("/", (req, res) => {
-  // TODO fetch info from db
-  res.send("Hello world")
-})
-
-/** Returns records from the last hour in 10 minutes increments **/
+/* Avg by hour for last 24 hours */
 app.get("/hourly", async (req, res) => {
-  // TODO -- from db.js:
-  const now = new Date().getTime()
-  const records = await Record.findAll({
-    where: {
-      recorded: {
-        [Op.gte]: now - 3600000
+  const response = []
+  // get current hour's average values
+  for (i = 0; i < 24; i++) {
+    const curTime = new Date().getTime() - (3600000 * i)
+    const records = await Record.findAll({
+      attributes: [
+        'name',
+        'type',
+        'units',
+        'recorded',
+        [fn('AVG', col('value')), 'avgValue']
+      ],
+      group: ['name', 'type'],
+      where: {
+        recorded: {
+          [Op.gte]: curTime - 3600000,
+          [Op.lte]: curTime 
+        }
       }
-    }
-  })
-  res.json(records)
+    })
+    response.push(records)
+  }
+  res.json(response)
 })
 
 
-/** Return avg hourly readings for the last 24 hours **/
+/** avg daily readings for the last week **/
 app.get("/daily", async (req, res) => {
   res.json({
     
@@ -42,10 +50,12 @@ app.get("/daily", async (req, res) => {
 
 })
 
+/* avg weekly readings for last month */
 app.get("/weekly", async (req, res) => {
 
 })
 
+/* avg monthly readings for last year */
 app.get("/monthly", async (req, res) => {
 
 })
