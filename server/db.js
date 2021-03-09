@@ -2,7 +2,7 @@ const conf = require('dotenv').config()
 const Sequelize = require("sequelize")
 
 console.log(conf)
-const { DB_NAME, DB_USER, DB_PASSWORD } = conf.parsed
+const { DB_NAME_TEST, DB_USER_TEST, DB_PASSWORD_TEST } = conf.parsed
 const sequelize = new Sequelize(DB_NAME, DB_USER, DB_PASSWORD, {
   host: "localhost",
   dialect: "mysql"

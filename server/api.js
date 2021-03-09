@@ -1,8 +1,10 @@
 const express = require("express")
 const bodyParser = require("body-parser")
 const app = express()
+const cors = require('cors')
 const Model = require("./db.js")
 
+app.use(cors())
 app.set("view engine", "pug")
 
 app.use(bodyParser.json())

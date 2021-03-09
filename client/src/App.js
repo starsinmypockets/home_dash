@@ -1,69 +1,65 @@
+import { useState } from 'react'
 import './App.css'
+import axios from 'axios'
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
 
-const data = [
-  {
-    name: 'Page A',
-    uv: 4000,
-    pv: 2400,
-    amt: 2400,
-  },
-  {
-    name: 'Page B',
-    uv: 3000,
-    pv: 1398,
-    amt: 2210,
-  },
-  {
-    name: 'Page C',
-    uv: 2000,
-    pv: 9800,
-    amt: 2290,
-  },
-  {
-    name: 'Page D',
-    uv: 2780,
-    pv: 3908,
-    amt: 2000,
-  },
-  {
-    name: 'Page E',
-    uv: 1890,
-    pv: 4800,
-    amt: 2181,
-  },
-  {
-    name: 'Page F',
-    uv: 2390,
-    pv: 3800,
-    amt: 2500,
-  },
-  {
-    name: 'Page G',
-    uv: 3490,
-    pv: 4300,
-    amt: 2100,
-  },
-];
-
 function App() {
+  const [data, setData] = useState([])
+  const [hasFetched, setHasFetched]  = useState(false)
+
+  if (!hasFetched) {
+    // just do this once, or when appropriate
+    setHasFetched(true)
+    axios.get('http://pjwalker.net:8099/hourly', { mode: 'no-cors',
+    }).then(res => {
+      const chartData = []
+      console.log(res.data)
+      res.data.forEach((sensor, i) => {
+        chartData[i] = []
+        sensor.readings.forEach(reading => {
+          chartData[i].push({
+            name: sensor.name,
+            time: new Date(reading.time * 1000).toDateString(),
+            value: reading.value,
+            foo: "Bar",
+            bar: "Baz",
+          })
+        })
+      })
+      setData(chartData)
+    }).catch(err => {
+      console.log("Error fetching data", err)
+    })
+  }
+
+  console.log("CHART DATA", data)
+
   return (
     <div className="App">
-      <header className="App-header">
-				<h1>Home Dash</h1>
-				<LineChart
-					width={400}
-					height={400}
-					data={data}
-					margin={{ top: 5, right: 20, left: 10, bottom: 5 }}
-				>
-					<XAxis dataKey="name" />
-					<Tooltip />
-					<CartesianGrid stroke="#f5f5f5" />
-					<Line type="monotone" dataKey="uv" stroke="#ff7300" yAxisId={0} />
-					<Line type="monotone" dataKey="pv" stroke="#387908" yAxisId={1} />
-				</LineChart>
-      </header>
+			<h1>Home Dash</h1>
+      <main>
+        <h2>PM2.5</h2>
+        {data.map(d => {
+        return (
+          <div>
+            <h3>{d[0].name}</h3>
+            <LineChart
+              width={400}
+              height={400}
+              style={{margin: "auto"}}
+              data={d}
+              margin={{ top: 5, right: 20, left: 10, bottom: 5 }}
+            >
+              <XAxis dataKey="time" />
+              <YAxis dataKey="value" />
+              <Tooltip />
+              <CartesianGrid stroke="#f5f5f5" />
+              <Line type="monotone" dataKey="value" stroke="#ff7300" yAxisId={0} />
+            </LineChart>
+          </div>
+          )
+        })}
+      </main>
     </div>
   )
 }
