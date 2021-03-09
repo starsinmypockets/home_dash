@@ -35,7 +35,7 @@ Record.init(
     value: {
       type: Sequelize.STRING
     },
-    created: {
+    recorded: {
       type: Sequelize.STRING
     }
   },
@@ -55,7 +55,7 @@ const types = ["PM1", "PM2.5", "PM10", "temp", "humidity"]
 const units = ["PM1", "PM2.5", "PM10", "F", "percent"]
 const ranges = [[0,6], [0,10], [0,5], [60,80], [40,80]]
 const numRecords = 60 * 24 * 6 // 90 days * 24 hours * 6 readings per hour
-const secondsInterval = 600 // 10 minutes * 60 seconds
+const secondsInterval = 600000 // 10 minutes * 60 seconds * 1000 milis
 const now = new Date().getTime() // Current timestamp
 const records = []
 
@@ -68,7 +68,7 @@ Record.sync().then(() => {
           name: name,
           units: units[i],
           value: randomNumber(ranges[i][0],ranges[i][1]),
-          created: now - (secondsInterval * j)
+          recorded: now - (secondsInterval * j)
         })
       }
     })

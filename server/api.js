@@ -2,7 +2,8 @@ const express = require("express")
 const bodyParser = require("body-parser")
 const app = express()
 const cors = require('cors')
-const Model = require("./db.js")
+const { Record } = require("./db.js")
+const { Op } = require("sequelize");
 
 app.use(cors())
 app.set("view engine", "pug")
@@ -18,124 +19,22 @@ app.get("/", (req, res) => {
   res.send("Hello world")
 })
 
+/** Returns records from the last hour in 10 minutes increments **/
 app.get("/hourly", async (req, res) => {
   // TODO -- from db.js:
-  res.json([
-    // each array represents a sensor / name combination
-      {
-        name: "Office",
-        sensor: "PM2.5",
-        units: "PM2.5",
-        readings: [
-          {
-            time: 1614891600,// timestamp of period beginning
-            value: 2 // average for period
-          },
-          {
-            time: 1614978000,// timestamp of period beginning
-            value: 2 // average for period
-          },
-          {
-            time: 1615064400,// timestamp of period beginning
-            value: 4 // average for period
-          },
-          {
-            time: 1615150800,// timestamp of period beginning
-            value: 4 // average for period
-          },
-          {
-            time: 1615237200,// timestamp of period beginning
-            value: 3 // average for period
-          },
-          {
-            time: 1615323600,// timestamp of period beginning
-            value: 2 // average for period
-          },
-          {
-            time: 1615410000,// timestamp of period beginning
-            value: 1 // average for period
-          },
-          {
-            time: 1615496400,// timestamp of period beginning
-            value: 5 // average for period
-          },
-          {
-            time: 1615582800,// timestamp of period beginning
-            value: 2// average for period
-          },
-          {
-            time: 1615669200,// timestamp of period beginning
-            value: 2// average for period
-          },
-          {
-            time: 1615755600,// timestamp of period beginning
-            value: 6// average for period
-          },
-          {
-            time: 1615842000,// timestamp of period beginning
-            value: 5// average for period
-          },
-        ]
-      },
-      {
-        name: "Kitchen",
-        sensor: "PM2.5",
-        units: "PM2.5",
-        readings: [
-          {
-            time: 1614891600,// timestamp of period beginning
-            value: 2 // average for period
-          },
-          {
-            time: 1614978000,// timestamp of period beginning
-            value: 2 // average for period
-          },
-          {
-            time: 1615064400,// timestamp of period beginning
-            value: 4 // average for period
-          },
-          {
-            time: 1615150800,// timestamp of period beginning
-            value: 4 // average for period
-          },
-          {
-            time: 1615237200,// timestamp of period beginning
-            value: 3 // average for period
-          },
-          {
-            time: 1615323600,// timestamp of period beginning
-            value: 2 // average for period
-          },
-          {
-            time: 1615410000,// timestamp of period beginning
-            value: 1 // average for period
-          },
-          {
-            time: 1615496400,// timestamp of period beginning
-            value: 5 // average for period
-          },
-          {
-            time: 1615582800,// timestamp of period beginning
-            value: 2// average for period
-          },
-          {
-            time: 1615669200,// timestamp of period beginning
-            value: 2// average for period
-          },
-          {
-            time: 1615755600,// timestamp of period beginning
-            value: 6// average for period
-          },
-          {
-            time: 1615842000,// timestamp of period beginning
-            value: 5// average for period
-          },
-        ]
+  const now = new Date().getTime()
+  const records = await Record.findAll({
+    where: {
+      recorded: {
+        [Op.gte]: now - 3600000
       }
-    ],
-  )
+    }
+  })
+  res.json(records)
 })
 
+
+/** Return avg hourly readings for the last 24 hours **/
 app.get("/daily", async (req, res) => {
   res.json({
     
