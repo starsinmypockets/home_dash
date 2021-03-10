@@ -7,6 +7,7 @@ import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, Responsi
 function App() {
   const [data, setData] = useState([])
   const [hasFetched, setHasFetched]  = useState(false)
+  const [dashMode, setDashMode] = useState('Hourly') // Hourly, Daily, Weekly, Monthly
 
   if (!hasFetched) {
     // just do this once, or when appropriate (for ex if we update from hourly to daily)
@@ -60,13 +61,36 @@ function App() {
 
   return (
     <div className="App">
-			<h1>Home Dash</h1>
       <main>
+			<h1 className="text-4xl">Home Dash</h1>
+      <div className="flex w-1/4 mx-auto">
+      {['Hourly', 'Weekly', 'Daily', 'Monthly'].map(mode => {
+        const disabled = (mode === dashMode) ? 'opacity-50 cursor-not-allowed' : ''
+        return(
+          <button className={`flex-1 bg-blue-500 text-white font-bold p-2 m-2 rounded ${disabled}`} onClick={e => setDashMode(mode)}>
+            {mode}
+          </button>
+        )
+      })}
+      </div>
         {Object.keys(data).map(item => {
         console.log("Item data", data[item])
         return (
-          <div>
-            <h3>{item}</h3>
+          <div className="mt-6">
+            <h3 className="text-3xl my-4">{item}</h3>
+            <i>Current</i>
+            <div className="flex w-2/4 mx-auto my-4">
+              <div className="flex-1 bg-pink-400 shadow-md p-4 mx-2">
+                <p className="text-2xl">Temp: <span className="text-white">74°</span></p>
+              </div>
+              <div className="flex-1 bg-gray-400 shadow-md p-4 mx-2">
+                <p className="text-2xl">PM2.5: <span className="text-white">5</span></p>
+              </div>
+              <div className="flex-1 bg-blue-400 shadow-md p-4 mx-2">
+                <p className="text-2xl">Humidity: <span className="text-white">64%</span></p>
+              </div>
+            </div>
+            <i>{dashMode}</i>
             <LineChart
               width={600}
               height={400}
