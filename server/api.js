@@ -43,7 +43,6 @@ app.get("/monthly", async (req, res) => {
   const month = 7 * 24 * 4 * 60 * 60 * 1000
   const intervals = 12
   const records = await getRecordsByInterval(month, intervals)
-  console.log('MONTHLY---------------', records)
   res.json(records)
 })
 

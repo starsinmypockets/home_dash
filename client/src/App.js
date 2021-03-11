@@ -32,7 +32,7 @@ function App() {
           chartData[`${reading.name}`].push({
             recorded: reading.recorded,
             units: reading.units,
-            [reading.type]: reading.avgValue,
+            [reading.type]: reading.avgValue.toFixed(2),
           })
         })
       })
@@ -73,7 +73,7 @@ function App() {
       <main>
 			<h1 className="text-4xl">Home Dash</h1>
       <div className="flex w-1/4 mx-auto">
-      {['Hourly', 'Weekly', 'Daily', 'Monthly'].map(mode => {
+      {['Hourly', 'Daily', 'Weekly', 'Monthly'].map(mode => {
         const disabled = (mode === dashMode) ? 'opacity-50 cursor-not-allowed' : ''
         return(
           <button className={`flex-1 bg-blue-500 text-white font-bold p-2 m-2 rounded ${disabled}`} onClick={e => {
@@ -115,9 +115,9 @@ function App() {
               </div>
             </div>
             <div className="mt-6">
-              <i>{dashMode}:</i>
+              <i>{dashMode} Avg.:</i>
               <LineChart
-                width={600}
+                width={800}
                 height={400}
                 style={{margin: "auto"}}
                 data={data[key]}
@@ -126,7 +126,6 @@ function App() {
                 <XAxis 
                   dataKey={row => getTimeString(row.recorded)}
                   textAnchor="begining" angle={45}
-                  tickLine={false} 
                   height={120}
                 />
                 <YAxis />

@@ -1,8 +1,6 @@
 const conf = require('dotenv').config()
 const Sequelize = require("sequelize")
 const { Op, fn, col} = require("sequelize")
-
-console.log(conf)
 const { DB_NAME, DB_USER, DB_PASSWORD } = conf.parsed
 const sequelize = new Sequelize(DB_NAME, DB_USER, DB_PASSWORD, {
   host: "localhost",
@@ -66,7 +64,7 @@ const getRecordsByInterval = async (interval, numIntervals) => {
 
     allRecords.push(records)
   }
-  console.log('-----------------------------', allRecords)
+  
   return allRecords
 }
 

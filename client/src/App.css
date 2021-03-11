@@ -36,3 +36,6 @@
     transform: rotate(360deg);
   }
 }
+
+/* Hack to hide overhanging x-axis label */
+g.recharts-cartesian-axis-tick:last-child text {display:none}
