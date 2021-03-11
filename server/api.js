@@ -2,8 +2,7 @@ const express = require("express")
 const bodyParser = require("body-parser")
 const app = express()
 const cors = require('cors')
-const { Record } = require("./db.js")
-const { Op, fn, col} = require("sequelize");
+const { Record, getRecordsByInterval } = require("./db.js")
 
 app.use(cors())
 app.set("view engine", "pug")
@@ -16,48 +15,36 @@ app.get("/test", (req, res) => {
 
 /* Avg by hour for last 24 hours */
 app.get("/hourly", async (req, res) => {
-  const response = []
-  // get current hour's average values
-  for (i = 0; i < 24; i++) {
-    const curTime = new Date().getTime() - (3600000 * i)
-    const records = await Record.findAll({
-      attributes: [
-        'name',
-        'type',
-        'units',
-        'recorded',
-        [fn('AVG', col('value')), 'avgValue']
-      ],
-      group: ['name', 'type'],
-      where: {
-        recorded: {
-          [Op.gte]: curTime - 3600000,
-          [Op.lte]: curTime 
-        }
-      }
-    })
-    response.push(records)
-  }
-  res.json(response)
+  const hour = 60 * 60 * 1000
+  const intervals = 24
+  const records = await getRecordsByInterval(hour, intervals)
+  res.json(records)
 })
 
 
 /** avg daily readings for the last week **/
 app.get("/daily", async (req, res) => {
-  res.json({
-    
-  })
-
+  const day = 24 * 60 * 60 * 1000
+  const intervals = 7
+  const records = await getRecordsByInterval(day, intervals)
+  res.json(records)
 })
 
 /* avg weekly readings for last month */
 app.get("/weekly", async (req, res) => {
-
+  const week = 7 * 24 * 60 * 60 * 1000
+  const intervals = 4
+  const records = await getRecordsByInterval(week, intervals)
+  res.json(records)
 })
 
 /* avg monthly readings for last year */
 app.get("/monthly", async (req, res) => {
-
+  const month = 7 * 24 * 4 * 60 * 60 * 1000
+  const intervals = 12
+  const records = await getRecordsByInterval(month, intervals)
+  console.log('MONTHLY---------------', records)
+  res.json(records)
 })
 
 // Create new records

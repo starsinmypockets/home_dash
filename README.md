@@ -1,6 +1,6 @@
 # HOME DASH
 
-API for managing home automation and sensors via ESP8266
+Open source tools for monitoring indoor air quality.
 
 ## Setup
 

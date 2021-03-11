@@ -1,5 +1,6 @@
 const conf = require('dotenv').config()
 const Sequelize = require("sequelize")
+const { Op, fn, col} = require("sequelize")
 
 console.log(conf)
 const { DB_NAME, DB_USER, DB_PASSWORD } = conf.parsed
@@ -42,6 +43,33 @@ Record.init(
   }
 )
 
+const getRecordsByInterval = async (interval, numIntervals) => {
+  const allRecords = []
+  for (i = 0; i < numIntervals; i++) {
+    const curTime = new Date().getTime() - (interval * i)
+    const records = await Record.findAll({
+      attributes: [
+        'name',
+        'type',
+        'units',
+        'recorded',
+        [fn('AVG', col('value')), 'avgValue']
+      ],
+      group: ['name', 'type'],
+      where: {
+        recorded: {
+          [Op.gte]: curTime - interval,
+          [Op.lte]: curTime 
+        }
+      },
+    })
+
+    allRecords.push(records)
+  }
+  console.log('-----------------------------', allRecords)
+  return allRecords
+}
+
 Record.sync()
 
-module.exports = { Record }
+module.exports = { Record, getRecordsByInterval }
