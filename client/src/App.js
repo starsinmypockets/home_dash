@@ -11,6 +11,7 @@ function App() {
   const [dashMode, setDashMode] = useState('Hourly') // Hourly, Daily, Weekly, Monthly
   const [chartDisplay, setChartDisplay] = useState({})
   const [isLoading, setIsLoading] = useState()
+  const [chartView, setChartView] = useState({})
 
   if (!hasFetched) {
     // just do this once, or when appropriate (for ex if we update from hourly to daily)
@@ -51,10 +52,12 @@ function App() {
         })
 
         joined[key].sort((row1, row2) => row1.recorded - row2.recorded)
+        setChartView(Object.assign(chartView, {[key]: 'PM2.5'})) // default to temp data
       })
       
       setData(joined)
       setIsLoading(false)
+      console.log('Chart view', chartView)
     }).catch(err => {
       console.log("Error fetching data", err)
     })
@@ -67,7 +70,6 @@ function App() {
 
   return (
     <div className="App">
-      
       <main>
 			<h1 className="text-4xl">Home Dash</h1>
       <div className="flex w-1/4 mx-auto">
@@ -88,20 +90,27 @@ function App() {
       }
       { !isLoading &&
       <div>
-        {Object.keys(data).map(item => {
-        console.log("Item data", data[item])
+        {Object.keys(data).map(key => {
+        console.log("Item data", data[key])
+        
         return (
           <div className="mt-6 border-t-2">
-            <h3 className="text-3xl my-4">{item}</h3>
+            <h3 className="text-3xl my-4">{key}</h3>
             <i>Current:</i>
             <div className="flex w-2/4 mx-auto my-4">
-              <div className="flex-1 bg-gray-400 shadow-md p-4 mx-2 rounded opacity-50 cursor-not-allowed">
+              <div className="flex-1 bg-gray-400 shadow-md p-4 mx-2 rounded cursor-pointer" onClick={_ => {
+                setChartView(Object.assign({}, chartView, {[key]: 'PM2.5'}))
+              }}>
                 <button className="text-2xl">PM2.5: <span className="text-white">5</span></button>
               </div>
-              <div className="flex-1 bg-pink-400 shadow-md p-4 mx-2 rounded">
+              <div className="flex-1 bg-pink-400 shadow-md p-4 mx-2 rounded cursor-pointer" onClick = {_ => {
+                setChartView(Object.assign({}, chartView, {[key]: 'Temp'}))
+              }}>
                 <button className="text-2xl">Temp: <span className="text-white">74°</span></button>
               </div>
-              <div className="flex-1 bg-blue-400 shadow-md p-4 mx-2 rounded">
+              <div className="flex-1 bg-blue-400 shadow-md p-4 mx-2 rounded cursor-pointer" onClick={_ => {
+                  setChartView(Object.assign({}, chartView, {[key]: 'Humidity'}))
+              }}>
                 <button className="text-2xl">Humidity: <span className="text-white">64%</span></button>
               </div>
             </div>
@@ -111,7 +120,7 @@ function App() {
                 width={600}
                 height={400}
                 style={{margin: "auto"}}
-                data={data[item]}
+                data={data[key]}
                 margin={{ top: 5, right: 20, left: 10, bottom: 5 }}
               >
                 <XAxis 
@@ -123,12 +132,11 @@ function App() {
                 <YAxis />
                 <Tooltip />
                 <CartesianGrid stroke="#f5f5f5" />
-                { /*
-                <Line type="monotone" dataKey="PM1" stroke="purple" yAxisId={0} />
-                <Line type="monotone" dataKey="PM10" stroke="cyan" yAxisId={0} />
-                <Line type="monotone" dataKey="PM2.5" stroke="teal" yAxisId={0} />
-                */ }
-                <Line type="monotone" dataKey="humidity" stroke="purple" yAxisId={0} />
+                { (chartView[key] === 'PM2.5') && <Line type="monotone" dataKey="PM1" stroke="purple" yAxisId={0} /> }
+                { (chartView[key] === 'PM2.5') && <Line type="monotone" dataKey="PM10" stroke="cyan" yAxisId={0} /> }
+                { (chartView[key] === 'PM2.5') && <Line type="monotone" dataKey="PM2.5" stroke="teal" yAxisId={0} /> }
+                { (chartView[key] === 'Temp') && <Line type="monotone" dataKey="temp" stroke="purple" yAxisId={0} /> }
+                { (chartView[key] === 'Humidity') && <Line type="monotone" dataKey="humidity" stroke="purple" yAxisId={0} /> }
                 <Legend />
               </LineChart>
             </div>
@@ -138,7 +146,6 @@ function App() {
         </div>
         }
       </main>
-      }
     </div>
   )
 }
