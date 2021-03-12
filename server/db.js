@@ -6,6 +6,7 @@ const sequelize = new Sequelize(DB_NAME, DB_USER, DB_PASSWORD, {
   host: "localhost",
   dialect: "mysql"
 })
+const bcrypt = require('bcrypt')
 
 const Model = Sequelize.Model
 
@@ -68,7 +69,17 @@ const getRecordsByInterval = async (interval, numIntervals) => {
   return allRecords
 }
 
-class User extends Model{}
+class User extends Model{
+  async validPassword(plaintext) {
+    try {
+      const result = await bcrypt.compare(plaintext, this.dataValues.password)
+      return result
+    } catch(e) {
+      console.log('Error validating password', e)
+      return false
+    }
+  }
+}
 
 User.init(
   {
@@ -87,7 +98,12 @@ User.init(
   }
 )
 
-User.prototype.validPassword = () => true
+/*
+User.prototype.validPassword = (a,b,c,d) => {
+  console.log('validPassword', a,b,c,d)
+  return true
+}
+*/
 
 Record.sync()
 User.sync()

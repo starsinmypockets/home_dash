@@ -14,18 +14,16 @@ app.set("view engine", "pug")
 app.use(bodyParser.json())
 app.use(cors())
 
-app.get("/test", (req, res) => {
-  res.json({ message: "Hello world" })
-})
-
 passport.use(new LocalStrategy(async (username, password, done) => {
   try {
     const user = await User.findOne({ where: {username: username  }})
+    const validPassword = await user.validPassword(password)
+    
     if (!user) {
       return done(null, false, { message: 'Incorrect username.' });
     }
 
-    if (!user.validPassword(password)) {
+    if (!validPassword) {
       return done(null, false, { message: 'Incorrect password.' });
     }
 
@@ -53,8 +51,13 @@ passport.deserializeUser(async (username, done) => {
 })
 
 app.use(passport.initialize());
-app.use(require('express-session')({ secret: SESSION_SECRET, resave: false, saveUninitialized: false }))
+app.use(require('express-session')({ secret: SESSION_SECRET, resave: false, saveUninitialized: false, maxAge: 60000 }))
 app.use(passport.session());
+
+app.use((req, res, next) => {
+  console.log('Session -> ', req.session)
+  next()
+})
 
 /* Avg by hour for last 24 hours */
 app.get("/hourly", async (req, res) => {
@@ -65,7 +68,7 @@ app.get("/hourly", async (req, res) => {
     const records = await getRecordsByInterval(hour, intervals, user)
     res.json(records)
   } catch(e) {
-    res.json({})
+    res.json([])
   }
 })
 
@@ -108,7 +111,11 @@ app.post("/new", async (req, res) => {
 })
   
 app.post('/login',  passport.authenticate("local"), (req, res) => {
-  res.json(req.user)
+  console.log('login', req.user)
+  res.json({
+    username: req.user.username,
+    success: true
+  })
 })
   
 app.get('/logout', (req, res) => {
