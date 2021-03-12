@@ -1,13 +1,13 @@
-const express = require("express")
+const express = require("express");
 const bodyParser = require("body-parser")
 const app = express()
 const cors = require('cors')
-const passport = require('passport');
+const conf = require('dotenv').config()
+const passport = require('passport')
 const Strategy = require('passport-local').Strategy;
 const { Record, getRecordsByInterval, User } = require("./db.js")
 const LocalStrategy = require('passport-local').Strategy;
-
-app.use(require('express-session')({ secret: '123foobarkitty!456', resave: false, saveUninitialized: false }));
+const { SESSION_SECRET } = conf.parsed
 
 app.set("view engine", "pug")
 
@@ -53,14 +53,20 @@ passport.deserializeUser(async (username, done) => {
 })
 
 app.use(passport.initialize());
+app.use(require('express-session')({ secret: SESSION_SECRET, resave: false, saveUninitialized: false }))
 app.use(passport.session());
 
 /* Avg by hour for last 24 hours */
 app.get("/hourly", async (req, res) => {
-  const hour = 60 * 60 * 1000
-  const intervals = 24
-  const records = await getRecordsByInterval(hour, intervals)
-  res.json(records)
+  try {
+    const user = req.session.passport.user
+    const hour = 60 * 60 * 1000
+    const intervals = 24
+    const records = await getRecordsByInterval(hour, intervals, user)
+    res.json(records)
+  } catch(e) {
+    res.json({})
+  }
 })
 
 /** avg daily readings for the last week **/
@@ -93,7 +99,6 @@ app.post("/new", async (req, res) => {
   const Record = Model.Record
 
   try {
-    console.log(req.body)
     await Record.bulkCreate(req.body)
     return res.json({ success: true })
   } catch (e) {
@@ -103,13 +108,11 @@ app.post("/new", async (req, res) => {
 })
   
 app.post('/login',  passport.authenticate("local"), (req, res) => {
-  console.log('POST CALLBACK', req.user)
   res.json(req.user)
 })
   
 app.get('/logout', (req, res) => {
 	const result = req.logout()
-  console.log(result)	
 })
 
 app.get('/profile', (req, res) => {
