@@ -68,6 +68,28 @@ const getRecordsByInterval = async (interval, numIntervals) => {
   return allRecords
 }
 
-Record.sync()
+class User extends Model{}
 
-module.exports = { Record, getRecordsByInterval }
+User.init(
+  {
+    username: {
+      type: Sequelize.STRING,
+      allowNull: false
+    },
+    password: {
+      type: Sequelize.STRING,
+      allowNull: false
+    },
+  },
+  {
+    sequelize,
+    modelName: "user"
+  }
+)
+
+User.prototype.validPassword = () => true
+
+Record.sync()
+User.sync()
+
+module.exports = { Record, getRecordsByInterval, User }
