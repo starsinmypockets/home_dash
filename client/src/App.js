@@ -2,16 +2,34 @@ import { useState } from 'react'
 import DayJS from 'dayjs'
 import './App.css'
 import Spinner from './Spinner'
+import LoginForm from './LoginForm'
 import axios from 'axios'
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
+
+const basePath = "http://dev.pjwalker.net/api"
 
 function App() {
   const [data, setData] = useState([])
   const [hasFetched, setHasFetched]  = useState(false)
-  const [dashMode, setDashMode] = useState('Hourly') // Hourly, Daily, Weekly, Monthly
+  const [dashMode, setDashMode] = useState('Daily') // Hourly, Daily, Weekly, Monthly
   const [chartDisplay, setChartDisplay] = useState({})
   const [isLoading, setIsLoading] = useState()
   const [chartView, setChartView] = useState({})
+  const [user, setUser] = useState()
+  const [showModal, setShowModal] = useState(false)
+  
+  const loginSubmit = async (username, password) => {
+    await axios.post(`${basePath}/login`, {
+      username: username,
+      password: password
+    })
+    setHasFetched(false)
+  }
+
+  const logoutSubmit = async () => {
+    await axios.get(`${basePath}/logout`)
+    setHasFetched(false)
+  }
 
   if (!hasFetched) {
     // just do this once, or when appropriate (for ex if we update from hourly to daily)
@@ -19,7 +37,7 @@ function App() {
     setIsLoading(true)
     
     // TODO handle hourly / daily / ...
-    axios.get(`http://pjwalker.net:8099/${dashMode}`, { mode: 'no-cors',
+    axios.get(`${basePath}/${dashMode}`, { mode: 'no-cors',
     }).then(res => {
       const chartData = []
 
@@ -68,23 +86,32 @@ function App() {
     return DayJS(timestamp * 1).format('MM/DD/YY - HH:mm')
   }
 
+  const showLogin = Object.keys(data).length === 0
+
   return (
     <div className="App">
       <main>
 			<h1 className="text-4xl">Home Dash</h1>
-      <div className="flex w-1/4 mx-auto">
-      {['Hourly', 'Daily', 'Weekly', 'Monthly'].map(mode => {
-        const disabled = (mode === dashMode) ? 'opacity-50 cursor-not-allowed' : ''
-        return(
-          <button className={`flex-1 bg-blue-500 text-white font-bold p-2 m-2 rounded ${disabled}`} onClick={e => {
-          setHasFetched(false)
-          setDashMode(mode)
-        }}>
-            {mode}
-          </button>
-        )
-      })}
-      </div>
+      <LoginForm 
+        showLogin={showLogin}
+        loginSubmit={loginSubmit}
+        logoutSubmit={logoutSubmit}
+      />
+      { (!showLogin) && 
+        <div className="flex w-1/4 mx-auto">
+        {['Hourly', 'Daily', 'Weekly', 'Monthly'].map(mode => {
+          const disabled = (mode === dashMode) ? 'opacity-50 cursor-not-allowed' : ''
+          return(
+            <button className={`flex-1 bg-blue-500 text-white font-bold p-2 m-2 rounded ${disabled}`} onClick={e => {
+            setHasFetched(false)
+            setDashMode(mode)
+          }}>
+              {mode}
+            </button>
+          )
+        })}
+        </div>
+      }
       { isLoading && 
         <Spinner />
       }

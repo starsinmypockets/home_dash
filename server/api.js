@@ -3,16 +3,30 @@ const bodyParser = require("body-parser")
 const app = express()
 const cors = require('cors')
 const conf = require('dotenv').config()
+const uuid = require('uuid').v4
+const session = require('express-session')
+const FileStore = require('session-file-store')
 const passport = require('passport')
 const Strategy = require('passport-local').Strategy;
 const { Record, getRecordsByInterval, User } = require("./db.js")
 const LocalStrategy = require('passport-local').Strategy;
 const { SESSION_SECRET } = conf.parsed
 
-app.set("view engine", "pug")
-
 app.use(bodyParser.json())
 app.use(cors())
+app.use(session({
+  secret: SESSION_SECRET,
+  genid: (req) => {
+    console.log('Inside the session middleware')
+    console.log(req.session)
+    return uuid() // use UUIDs for session IDs
+  },
+  resave: false,
+  saveUninitialized: true
+}))
+
+app.use(passport.initialize())
+app.use(passport.session())	
 
 passport.use(new LocalStrategy(async (username, password, done) => {
   try {
@@ -26,105 +40,151 @@ passport.use(new LocalStrategy(async (username, password, done) => {
     if (!validPassword) {
       return done(null, false, { message: 'Incorrect password.' });
     }
-
-    return done(null, user.dataValues)
+		
+    return done(null, user)
   } catch(err) {
     return done(err)
   }
 }))
 
-passport.serializeUser(async (user, done) => {
+passport.serializeUser(function(user, done) {
+  console.log('SERIALIZE', user.dataValues.username)
   try {
-    done(null, user.username);
+    done(null, user.dataValues.username);
   } catch(err) {
     done(err)
   }
 })
 
 passport.deserializeUser(async (username, done) => {
+  console.log('DESERIALIZE', username)
   try{
     const user = await User.findOne({where: {username: username}})
-    done(null, user.dataValues);
+		done(null, user.dataValues);
   } catch(err) {
     done(err)
   } 
 })
 
-app.use(passport.initialize());
-app.use(require('express-session')({ secret: SESSION_SECRET, resave: false, saveUninitialized: false, maxAge: 60000 }))
-app.use(passport.session());
-
 app.use((req, res, next) => {
   console.log('Session -> ', req.session)
+  console.log('User -> ', req.user)
   next()
 })
 
+app.get('/api', async (req, res) =>{
+  console.log(req.sessionID)
+  res.json({})
+})
+
+// TODO DELETE THIS PATH
+app.get('/api/authrequired', (req, res) => {
+  console.log('Inside GET /authrequired callback')
+  console.log(`User authenticated? ${req.isAuthenticated()}`)
+  if(req.isAuthenticated()) {
+    res.send('you hit the authentication endpoint\n')
+  } else {
+    res.redirect('/')
+  }
+})
+
 /* Avg by hour for last 24 hours */
-app.get("/hourly", async (req, res) => {
-  try {
-    const user = req.session.passport.user
+app.get("/api/hourly", async (req, res) => {
+  if (req.isAuthenticated()) {
     const hour = 60 * 60 * 1000
     const intervals = 24
-    const records = await getRecordsByInterval(hour, intervals, user)
+    const records = await getRecordsByInterval(hour, intervals)
     res.json(records)
-  } catch(e) {
+  } else {
     res.json([])
   }
 })
 
 /** avg daily readings for the last week **/
-app.get("/daily", async (req, res) => {
-  const day = 24 * 60 * 60 * 1000
-  const intervals = 7
-  const records = await getRecordsByInterval(day, intervals)
-  res.json(records)
+app.get("/api/daily", passport.authenticate('session'), async (req, res) => {
+  if (req.isAuthenticated()) {
+    const day = 24 * 60 * 60 * 1000
+    const intervals = 7
+    const records = await getRecordsByInterval(day, intervals)
+    res.json(records)
+  } else {
+    console.log('NOT AUTHENTICATED')
+    res.json([])
+  }
 })
 
 /* avg weekly readings for last month */
-app.get("/weekly", async (req, res) => {
-  const week = 7 * 24 * 60 * 60 * 1000
-  const intervals = 4
-  const records = await getRecordsByInterval(week, intervals)
-  res.json(records)
+app.get("/api/weekly", async (req, res) => {
+  if (req.isAuthenticated()) {
+    const week = 7 * 24 * 60 * 60 * 1000
+    const intervals = 4
+    const records = await getRecordsByInterval(week, intervals)
+    res.json(records)
+  } else {
+    console.log('NOT AUTHENTICATED')
+    res.json([])
+  }
 })
 
 /* avg monthly readings for last year */
-app.get("/monthly", async (req, res) => {
-  const month = 7 * 24 * 4 * 60 * 60 * 1000
-  const intervals = 12
-  const records = await getRecordsByInterval(month, intervals)
-  res.json(records)
+app.get("/api/monthly", async (req, res) => {
+  if (req.isAuthenticated()) {
+    const month = 7 * 24 * 4 * 60 * 60 * 1000
+    const intervals = 12
+    const records = await getRecordsByInterval(month, intervals)
+    res.json(records)
+  } else {
+    console.log('NOT AUTHENTICATED')
+    res.json([])
+  }
 })
 
 // Create new records
 // **NOTE** always use array of records [{...record},...]
-app.post("/new", async (req, res) => {
-  const Record = Model.Record
+// TODO need to figure out auth for device
+app.post("/api/new", async (req, res) => {
+  if (req.isAuthenticated()) {
+    const Record = Model.Record
 
-  try {
-    await Record.bulkCreate(req.body)
-    return res.json({ success: true })
-  } catch (e) {
-    console.error("Failed to create Record", e)
-    return req.error("Failed to create Record " + e)
+    try {
+      await Record.bulkCreate(req.body)
+      return res.json({ success: true })
+    } catch (e) {
+      console.error("Failed to create Record", e)
+      return req.error("Failed to create Record " + e)
+    }
+  } else {
+    console.log('NOT AUTHENTICATED')
+    res.json([])
   }
 })
   
-app.post('/login',  passport.authenticate("local"), (req, res) => {
-  console.log('login', req.user)
-  res.json({
-    username: req.user.username,
-    success: true
-  })
+app.post('/api/login', (req, res, next) => {
+  passport.authenticate('local', (err, user, info) => {
+    console.log('Inside passport.authenticate() callback');
+    console.log(`req.session.passport: ${JSON.stringify(req.session.passport)}`)
+    console.log(`req.user: ${JSON.stringify(req.user)}`)
+    req.login(user, (err) => {
+      console.log('Inside req.login() callback')
+      console.log(`req.session.passport: ${JSON.stringify(req.session.passport)}`)
+      console.log(`req.user: ${JSON.stringify(req.user)}`)
+      return res.json({});
+    })
+  })(req, res, next);
 })
   
-app.get('/logout', (req, res) => {
+app.get('/api/logout', (req, res) => {
 	const result = req.logout()
+  return res.json({loggedOut: result})
 })
 
-app.get('/profile', (req, res) => {
-  require('connect-ensure-login').ensureLoggedIn()
-  return res.json({user: req.user})
+app.get('/api/profile', (req, res) => {
+  if (req.isAuthenticated()) {
+    return res.json({user: req.user})
+  } else {
+    console.log('NOT AUTHENTICATED')
+    res.json([])
+  }
 })
 
 app.listen(8099, () => {
