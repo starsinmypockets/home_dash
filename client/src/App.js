@@ -1,15 +1,17 @@
 import { useState } from 'react'
 import DayJS from 'dayjs'
+import axios from 'axios'
 import './App.css'
 import Spinner from './Spinner'
 import LoginForm from './LoginForm'
-import axios from 'axios'
+import { fetchSeriesData, fetchCurrentValues } from './api.js'
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
 
 const basePath = "http://dev.pjwalker.net/api"
 
 function App() {
-  const [data, setData] = useState([])
+  const [seriesData, setSeriesData] = useState([])
+  const [currentData, setCurrentData] = useState()
   const [hasFetched, setHasFetched]  = useState(false)
   const [dashMode, setDashMode] = useState('Daily') // Hourly, Daily, Weekly, Monthly
   const [chartDisplay, setChartDisplay] = useState({})
@@ -35,58 +37,15 @@ function App() {
     // just do this once, or when appropriate (for ex if we update from hourly to daily)
     setHasFetched(true)
     setIsLoading(true)
-    
-    // TODO handle hourly / daily / ...
-    axios.get(`${basePath}/${dashMode}`, { mode: 'no-cors',
-    }).then(res => {
-      const chartData = []
-
-      // sort arrays by name field
-      res.data.forEach((hour, i) => {
-        hour.forEach(reading => {
-          if (!chartData[`${reading.name}`]) {
-            chartData[`${reading.name}`] = []
-          }
-          chartData[`${reading.name}`].push({
-            recorded: reading.recorded,
-            units: reading.units,
-            [reading.type]: reading.avgValue.toFixed(2),
-          })
-        })
-      })
-
-      // join rows in 'recorded' field
-      const joined = []
-
-      Object.keys(chartData).forEach(key => {
-        const dates = {}
-        
-        chartData[key].forEach(row => {
-          dates[row.recorded] = row
-        })
-
-        joined[key] = Object.keys(dates).map(date => {
-          return Object.assign({}, ...chartData[key].filter(r => r.recorded === date))
-        })
-
-        joined[key].sort((row1, row2) => row1.recorded - row2.recorded)
-        setChartView(Object.assign(chartView, {[key]: 'PM2.5'})) // default to temp data
-      })
-      
-      setData(joined)
-      setIsLoading(false)
-      console.log('Chart view', chartView)
-    }).catch(err => {
-      console.log("Error fetching data", err)
-    })
+    fetchSeriesData(basePath, dashMode, setSeriesData, chartView, setChartView, setIsLoading)
+    // fetchCurrentValues(basePath, setCurrentData)
   }
 
-  console.log("CHART DATA", data)
   const getTimeString = timestamp => {
     return DayJS(timestamp * 1).format('MM/DD/YY - HH:mm')
   }
 
-  const showLogin = Object.keys(data).length === 0
+  const showLogin = Object.keys(seriesData).length === 0
 
   return (
     <div className="App">
@@ -117,8 +76,7 @@ function App() {
       }
       { !isLoading &&
       <div>
-        {Object.keys(data).map(key => {
-        console.log("Item data", data[key])
+        {Object.keys(seriesData).map(key => {
         
         return (
           <div className="mt-6 border-t-2">
@@ -147,7 +105,7 @@ function App() {
                 width={800}
                 height={400}
                 style={{margin: "auto"}}
-                data={data[key]}
+                data={seriesData[key]}
                 margin={{ top: 5, right: 20, left: 10, bottom: 5 }}
               >
                 <XAxis 

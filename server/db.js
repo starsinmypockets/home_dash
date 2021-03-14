@@ -44,9 +44,12 @@ Record.init(
 
 const getRecordsByInterval = async (interval, numIntervals) => {
   const allRecords = []
+  const iters = new Array(numIntervals)
+  const qs = []
+  
   for (i = 0; i < numIntervals; i++) {
     const curTime = new Date().getTime() - (interval * i)
-    const records = await Record.findAll({
+    qs.push(Record.findAll({
       attributes: [
         'name',
         'type',
@@ -61,12 +64,10 @@ const getRecordsByInterval = async (interval, numIntervals) => {
           [Op.lte]: curTime 
         }
       },
-    })
-
-    allRecords.push(records)
+    }))
   }
   
-  return allRecords
+  return(Promise.all(qs))
 }
 
 class User extends Model{
@@ -89,10 +90,11 @@ const getCurrentValues = async () => {
       ],
     }).map(result => result.dataValues)
     
-    const curVals = []
-    
-    cats.forEach(async cat => {
-      const result = await Record.findAll({
+    const qs = []
+   
+    for (i = 0; i < cats.length; i++) {
+      const cat = cats[i]
+      qs.push(Record.findAll({
         where: {
           type: cat.type,
           name: cat.name
@@ -101,12 +103,10 @@ const getCurrentValues = async () => {
           ['id', 'DESC']
         ],
         limit: 1
-      })
+      }).then(result => result[0]))
+    }
 
-      curVals.push(result[0].dataValues)
-    })
-
-    return curVals
+    return Promise.all(qs)
 }
 
 User.init(
@@ -125,13 +125,6 @@ User.init(
     modelName: "user"
   }
 )
-
-/*
-User.prototype.validPassword = (a,b,c,d) => {
-  console.log('validPassword', a,b,c,d)
-  return true
-}
-*/
 
 Record.sync()
 User.sync()

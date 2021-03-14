@@ -5,7 +5,7 @@ const cors = require('cors')
 const conf = require('dotenv').config()
 const uuid = require('uuid').v4
 const session = require('express-session')
-const FileStore = require('session-file-store')
+const FileStore = require('session-file-store')(session)
 const passport = require('passport')
 const Strategy = require('passport-local').Strategy;
 const { Record, getRecordsByInterval, getCurrentValues, User } = require("./db.js")
@@ -22,7 +22,8 @@ app.use(session({
     return uuid() // use UUIDs for session IDs
   },
   resave: false,
-  saveUninitialized: true
+  saveUninitialized: true,
+  store: new FileStore
 }))
 
 app.use(passport.initialize())
@@ -94,6 +95,7 @@ app.get("/api/hourly", async (req, res) => {
     const hour = 60 * 60 * 1000
     const intervals = 24
     const records = await getRecordsByInterval(hour, intervals)
+    console.log('api2', records)
     res.json(records)
   } else {
     res.json([])
@@ -106,7 +108,6 @@ app.get("/api/daily", passport.authenticate('session'), async (req, res) => {
     const day = 24 * 60 * 60 * 1000
     const intervals = 7
     const records = await getRecordsByInterval(day, intervals)
-    const curVlas = await getCurrentValues()
     res.json(records)
   } else {
     console.log('NOT AUTHENTICATED')
@@ -142,7 +143,8 @@ app.get("/api/monthly", async (req, res) => {
 
 app.get("/api/current", async (req, res) => {
   if (req.isAuthenticated()) {
-    const curVals = async getCurrentValues()
+    console.log('Current authenticated')
+    const curVals = await getCurrentValues()
     res.json(curVals)
   } else {
     console.log('NOT AUTHENTICATED')
@@ -172,11 +174,10 @@ app.post("/api/new", async (req, res) => {
   
 app.post('/api/login', (req, res, next) => {
   passport.authenticate('local', (err, user, info) => {
-    console.log('Inside passport.authenticate() callback');
+    console.log(user)
     console.log(`req.session.passport: ${JSON.stringify(req.session.passport)}`)
     console.log(`req.user: ${JSON.stringify(req.user)}`)
     req.login(user, (err) => {
-      console.log('Inside req.login() callback')
       console.log(`req.session.passport: ${JSON.stringify(req.session.passport)}`)
       console.log(`req.user: ${JSON.stringify(req.user)}`)
       return res.json({});
