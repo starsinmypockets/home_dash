@@ -8,7 +8,7 @@ const session = require('express-session')
 const FileStore = require('session-file-store')
 const passport = require('passport')
 const Strategy = require('passport-local').Strategy;
-const { Record, getRecordsByInterval, User } = require("./db.js")
+const { Record, getRecordsByInterval, getCurrentValues, User } = require("./db.js")
 const LocalStrategy = require('passport-local').Strategy;
 const { SESSION_SECRET } = conf.parsed
 
@@ -106,6 +106,7 @@ app.get("/api/daily", passport.authenticate('session'), async (req, res) => {
     const day = 24 * 60 * 60 * 1000
     const intervals = 7
     const records = await getRecordsByInterval(day, intervals)
+    const curVlas = await getCurrentValues()
     res.json(records)
   } else {
     console.log('NOT AUTHENTICATED')
@@ -133,6 +134,16 @@ app.get("/api/monthly", async (req, res) => {
     const intervals = 12
     const records = await getRecordsByInterval(month, intervals)
     res.json(records)
+  } else {
+    console.log('NOT AUTHENTICATED')
+    res.json([])
+  }
+})
+
+app.get("/api/current", async (req, res) => {
+  if (req.isAuthenticated()) {
+    const curVals = async getCurrentValues()
+    res.json(curVals)
   } else {
     console.log('NOT AUTHENTICATED')
     res.json([])

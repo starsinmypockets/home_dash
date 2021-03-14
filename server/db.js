@@ -81,6 +81,34 @@ class User extends Model{
   }
 }
 
+const getCurrentValues = async () => {
+    const cats = await Record.findAll({
+      attributes: [
+        [sequelize.fn('DISTINCT', sequelize.col('type')), 'type'],
+        'name'
+      ],
+    }).map(result => result.dataValues)
+    
+    const curVals = []
+    
+    cats.forEach(async cat => {
+      const result = await Record.findAll({
+        where: {
+          type: cat.type,
+          name: cat.name
+        },
+        order: [
+          ['id', 'DESC']
+        ],
+        limit: 1
+      })
+
+      curVals.push(result[0].dataValues)
+    })
+
+    return curVals
+}
+
 User.init(
   {
     username: {
@@ -108,4 +136,4 @@ User.prototype.validPassword = (a,b,c,d) => {
 Record.sync()
 User.sync()
 
-module.exports = { Record, getRecordsByInterval, User }
+module.exports = { Record, getRecordsByInterval, getCurrentValues, User }
