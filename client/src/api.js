@@ -19,6 +19,8 @@ const fetchSeriesData = (basePath, dashMode, setSeriesData, chartView, setChartV
       })
     })
 
+    console.log('api 1', chartData)
+
     // join rows in 'recorded' field
     const joined = []
 
@@ -37,6 +39,7 @@ const fetchSeriesData = (basePath, dashMode, setSeriesData, chartView, setChartV
       setChartView(Object.assign(chartView, {[key]: 'PM2.5'})) // default to temp data
     })
     
+    console.log('api 2', joined)
     setSeriesData(joined)
     setIsLoading(false)
   }).catch(err => {
@@ -44,11 +47,25 @@ const fetchSeriesData = (basePath, dashMode, setSeriesData, chartView, setChartV
   })
 }
 
-const fetchCurrentValues = (basePath, setCurrentData) => {
+const fetchCurrentData = (basePath, setCurrentData) => {
   axios.get(`${basePath}/current`, { mode: 'no-cors' })
   .then(res => {
-    setCurrentData(res.data)
+    const data = res.data
+    const currentData = []
+    
+    data.forEach(row => {
+      if (!currentData[row.name]) currentData[row.name] = []
+      currentData[row.name].push({[row.type]: row.value})
+    })
+    
+    const joined = {}
+    Object.keys(currentData).forEach(key => {
+      joined[key] = Object.assign({}, ...currentData[key])
+    })
+    
+    console.log('Current data', joined)
+    setCurrentData(joined)
   })
 }
 
-export { fetchSeriesData, fetchCurrentValues }
+export { fetchSeriesData, fetchCurrentData }

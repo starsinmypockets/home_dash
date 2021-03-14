@@ -4,14 +4,14 @@ import axios from 'axios'
 import './App.css'
 import Spinner from './Spinner'
 import LoginForm from './LoginForm'
-import { fetchSeriesData, fetchCurrentValues } from './api.js'
+import { fetchSeriesData, fetchCurrentData } from './api.js'
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
 
 const basePath = "http://dev.pjwalker.net/api"
 
 function App() {
   const [seriesData, setSeriesData] = useState([])
-  const [currentData, setCurrentData] = useState()
+  const [currentData, setCurrentData] = useState({})
   const [hasFetched, setHasFetched]  = useState(false)
   const [dashMode, setDashMode] = useState('Daily') // Hourly, Daily, Weekly, Monthly
   const [chartDisplay, setChartDisplay] = useState({})
@@ -38,7 +38,7 @@ function App() {
     setHasFetched(true)
     setIsLoading(true)
     fetchSeriesData(basePath, dashMode, setSeriesData, chartView, setChartView, setIsLoading)
-    // fetchCurrentValues(basePath, setCurrentData)
+    fetchCurrentData(basePath, setCurrentData)
   }
 
   const getTimeString = timestamp => {
@@ -86,17 +86,32 @@ function App() {
               <div className="flex-1 bg-gray-400 shadow-md p-4 mx-2 rounded cursor-pointer" onClick={_ => {
                 setChartView(Object.assign({}, chartView, {[key]: 'PM2.5'}))
               }}>
-                <button className="text-2xl">PM2.5: <span className="text-white">5</span></button>
+                <button className="text-2xl">
+                  PM2.5: <span className="text-white">
+                    {currentData[key]['PM2.5'] | '--'}
+                  </span>
+                </button>
               </div>
               <div className="flex-1 bg-pink-400 shadow-md p-4 mx-2 rounded cursor-pointer" onClick = {_ => {
                 setChartView(Object.assign({}, chartView, {[key]: 'Temp'}))
               }}>
-                <button className="text-2xl">Temp: <span className="text-white">74°</span></button>
+                <button className="text-2xl">
+                  Temp: <span className="text-white">
+                    {currentData[key]['temp'] | '--'}°
+                  </span>
+                </button>
               </div>
-              <div className="flex-1 bg-blue-400 shadow-md p-4 mx-2 rounded cursor-pointer" onClick={_ => {
+              <div 
+                className="flex-1 bg-blue-400 shadow-md p-4 mx-2 rounded cursor-pointer"
+                onClick={_ => {
                   setChartView(Object.assign({}, chartView, {[key]: 'Humidity'}))
-              }}>
-                <button className="text-2xl">Humidity: <span className="text-white">64%</span></button>
+                }}
+              >
+                <button className="text-2xl">
+                  Humidity: <span className="text-white">
+                    {currentData[key]['humidity'] | '--'}%
+                  </span>
+                </button>
               </div>
             </div>
             <div className="mt-6">
