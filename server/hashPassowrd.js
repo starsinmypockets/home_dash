@@ -1,9 +1,12 @@
+const conf = require('dotenv').config()
+const { PW_SALT_ROUNDS } = conf
 const bcrypt = require('bcrypt')
 const saltRounds = 10
-const myPlaintextPassword = process.argv[2]
 
-bcrypt.genSalt(saltRounds, function(err, salt) {
-    bcrypt.hash(myPlaintextPassword, salt, function(err, hash) {
-			console.log(hash)
-    })
-})
+const getSalt = async (plaintext) => {
+  const salt = await bcrypt.genSalt(PW_SALT_ROUNDS)
+  const hash = await bcrypt.hash(plaintext, salt)
+  console.log(hash)
+}
+
+getSalt(process.argv[2])

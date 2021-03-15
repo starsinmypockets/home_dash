@@ -7,7 +7,6 @@ const sequelize = new Sequelize(DB_NAME, DB_USER, DB_PASSWORD, {
   dialect: "mysql"
 })
 const bcrypt = require('bcrypt')
-
 const Model = Sequelize.Model
 
 class Record extends Model {}
@@ -82,6 +81,30 @@ class User extends Model{
   }
 }
 
+User.hashPassword = async (plaintext) => {
+  const salt = await bcrypt.genSalt(10)
+  const hash = await bcrypt.hash(plaintext, salt)
+  return hash
+}
+
+User.init(
+  {
+    username: {
+      type: Sequelize.STRING(24),
+      allowNull: false,
+      unique: true
+    },
+    password: {
+      type: Sequelize.STRING,
+      allowNull: false
+    },
+  },
+  {
+    sequelize,
+    modelName: "user"
+  }
+)
+
 const getCurrentValues = async () => {
     const cats = await Record.findAll({
       attributes: [
@@ -109,23 +132,12 @@ const getCurrentValues = async () => {
     return Promise.all(qs)
 }
 
-User.init(
-  {
-    username: {
-      type: Sequelize.STRING,
-      allowNull: false
-    },
-    password: {
-      type: Sequelize.STRING,
-      allowNull: false
-    },
-  },
-  {
-    sequelize,
-    modelName: "user"
-  }
-)
 
+/** Relationships **/
+User.hasMany(Record)
+Record.belongsTo(User)
+
+// make it so
 Record.sync()
 User.sync()
 
