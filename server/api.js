@@ -17,8 +17,6 @@ app.use(cors())
 app.use(session({
   secret: SESSION_SECRET,
   genid: (req) => {
-    console.log('Inside the session middleware')
-    console.log(req.session)
     return uuid() // use UUIDs for session IDs
   },
   resave: false,
@@ -32,11 +30,12 @@ app.use(passport.session())
 passport.use(new LocalStrategy(async (username, password, done) => {
   try {
     const user = await User.findOne({ where: {username: username  }})
-    const validPassword = await user.validPassword(password)
     
     if (!user) {
       return done(null, false, { message: 'Incorrect username.' });
     }
+    
+    const validPassword = await user.validPassword(password)
 
     if (!validPassword) {
       return done(null, false, { message: 'Incorrect password.' });
@@ -49,16 +48,15 @@ passport.use(new LocalStrategy(async (username, password, done) => {
 }))
 
 passport.serializeUser(function(user, done) {
-  console.log('SERIALIZE', user.dataValues.username)
   try {
     done(null, user.dataValues.username);
   } catch(err) {
+    console.log('SERIALIZE USER ERR', err)
     done(err)
   }
 })
 
 passport.deserializeUser(async (username, done) => {
-  console.log('DESERIALIZE', username)
   try{
     const user = await User.findOne({where: {username: username}})
 		done(null, user.dataValues);
@@ -67,15 +65,17 @@ passport.deserializeUser(async (username, done) => {
   } 
 })
 
+/*
 app.use((req, res, next) => {
   console.log('Session -> ', req.session)
   console.log('User -> ', req.user)
   next()
 })
+*/
 
-app.get('/api', async (req, res) =>{
+app.get('/test', async (req, res) =>{
   console.log(req.sessionID)
-  res.json({})
+  res.json({hello: "world"})
 })
 
 /* Avg by hour for last 24 hours */
@@ -162,9 +162,13 @@ app.post("/api/new", async (req, res) => {
 app.post('/api/login', (req, res, next) => {
   passport.authenticate('local', (err, user, info) => {
     req.login(user, (err) => {
-      return res.json({});
+      if (req.isAuthenticated()) {
+        return res.json({authenticated: true})
+      } else {
+        return res.json({authenticated: false})
+      }
     })
-  })(req, res, next);
+  })(req, res, next)
 })
   
 app.get('/api/logout', (req, res) => {
@@ -184,3 +188,5 @@ app.get('/api/profile', (req, res) => {
 app.listen(8099, () => {
   console.log("Listening on port 8099")
 })
+
+module.exports = { app }

@@ -1,11 +1,30 @@
 const conf = require('dotenv').config()
 const Sequelize = require("sequelize")
 const { Op, fn, col} = require("sequelize")
-const { DB_NAME, DB_USER, DB_PASSWORD } = conf.parsed
-const sequelize = new Sequelize(DB_NAME, DB_USER, DB_PASSWORD, {
-  host: "localhost",
-  dialect: "mysql"
-})
+
+
+console.log('NODE_ENV ----->', process.env.NODE_ENV)
+
+let sequelize
+
+if (process.env.NODE_ENV === 'test') {
+  console.log('Connecting to TESTING database...')
+  require('mysql2/node_modules/iconv-lite').encodingExists('cesus8')
+  const { DB_NAME, DB_USER, DB_PASSWORD } = conf.parsed
+  sequelize = new Sequelize(DB_NAME, DB_USER, DB_PASSWORD, {
+    host: "localhost",
+    dialect: "mysql",
+    logging: false
+  })
+} else {
+  console.log('Connecting to PRODUCTION database...')
+  const { DB_NAME_TEST, DB_USER_TEST, DB_PASSWORD_TEST } = conf.parsed
+  sequelize = new Sequelize(DB_NAME_TEST, DB_USER_TEST, DB_PASSWORD_TEST, {
+    host: "localhost",
+    dialect: "mysql"
+  })
+}
+
 const bcrypt = require('bcrypt')
 const Model = Sequelize.Model
 
