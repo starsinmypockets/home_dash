@@ -78,24 +78,12 @@ app.get('/api', async (req, res) =>{
   res.json({})
 })
 
-// TODO DELETE THIS PATH
-app.get('/api/authrequired', (req, res) => {
-  console.log('Inside GET /authrequired callback')
-  console.log(`User authenticated? ${req.isAuthenticated()}`)
-  if(req.isAuthenticated()) {
-    res.send('you hit the authentication endpoint\n')
-  } else {
-    res.redirect('/')
-  }
-})
-
 /* Avg by hour for last 24 hours */
 app.get("/api/hourly", async (req, res) => {
   if (req.isAuthenticated()) {
     const hour = 60 * 60 * 1000
     const intervals = 24
-    const records = await getRecordsByInterval(hour, intervals)
-    console.log('api2', records)
+    const records = await getRecordsByInterval(hour, intervals, req.user.id)
     res.json(records)
   } else {
     res.json([])
@@ -107,7 +95,7 @@ app.get("/api/daily", passport.authenticate('session'), async (req, res) => {
   if (req.isAuthenticated()) {
     const day = 24 * 60 * 60 * 1000
     const intervals = 7
-    const records = await getRecordsByInterval(day, intervals)
+    const records = await getRecordsByInterval(day, intervals, req.user.id)
     res.json(records)
   } else {
     console.log('NOT AUTHENTICATED')
@@ -120,7 +108,7 @@ app.get("/api/weekly", async (req, res) => {
   if (req.isAuthenticated()) {
     const week = 7 * 24 * 60 * 60 * 1000
     const intervals = 4
-    const records = await getRecordsByInterval(week, intervals)
+    const records = await getRecordsByInterval(week, intervals, req.user.id)
     res.json(records)
   } else {
     console.log('NOT AUTHENTICATED')
@@ -133,7 +121,7 @@ app.get("/api/monthly", async (req, res) => {
   if (req.isAuthenticated()) {
     const month = 7 * 24 * 4 * 60 * 60 * 1000
     const intervals = 12
-    const records = await getRecordsByInterval(month, intervals)
+    const records = await getRecordsByInterval(month, intervals, req.user.id)
     res.json(records)
   } else {
     console.log('NOT AUTHENTICATED')
@@ -143,8 +131,7 @@ app.get("/api/monthly", async (req, res) => {
 
 app.get("/api/current", async (req, res) => {
   if (req.isAuthenticated()) {
-    console.log('Current authenticated')
-    const curVals = await getCurrentValues()
+    const curVals = await getCurrentValues(req.user.id)
     res.json(curVals)
   } else {
     console.log('NOT AUTHENTICATED')
@@ -174,12 +161,7 @@ app.post("/api/new", async (req, res) => {
   
 app.post('/api/login', (req, res, next) => {
   passport.authenticate('local', (err, user, info) => {
-    console.log(user)
-    console.log(`req.session.passport: ${JSON.stringify(req.session.passport)}`)
-    console.log(`req.user: ${JSON.stringify(req.user)}`)
     req.login(user, (err) => {
-      console.log(`req.session.passport: ${JSON.stringify(req.session.passport)}`)
-      console.log(`req.user: ${JSON.stringify(req.user)}`)
       return res.json({});
     })
   })(req, res, next);

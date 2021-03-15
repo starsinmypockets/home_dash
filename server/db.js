@@ -41,7 +41,7 @@ Record.init(
   }
 )
 
-const getRecordsByInterval = async (interval, numIntervals) => {
+const getRecordsByInterval = async (interval, numIntervals, userId) => {
   const allRecords = []
   const iters = new Array(numIntervals)
   const qs = []
@@ -61,7 +61,8 @@ const getRecordsByInterval = async (interval, numIntervals) => {
         recorded: {
           [Op.gte]: curTime - interval,
           [Op.lte]: curTime 
-        }
+        },
+        userId: userId
       },
     }))
   }
@@ -105,7 +106,7 @@ User.init(
   }
 )
 
-const getCurrentValues = async () => {
+const getCurrentValues = async (userId) => {
     const cats = await Record.findAll({
       attributes: [
         [sequelize.fn('DISTINCT', sequelize.col('type')), 'type'],
@@ -120,7 +121,8 @@ const getCurrentValues = async () => {
       qs.push(Record.findAll({
         where: {
           type: cat.type,
-          name: cat.name
+          name: cat.name,
+          userId: userId
         },
         order: [
           ['id', 'DESC']
