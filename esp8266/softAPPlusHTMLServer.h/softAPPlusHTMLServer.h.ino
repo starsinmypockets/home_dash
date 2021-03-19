@@ -8,7 +8,7 @@ ESP8266WebServer server(80);
 
 // setup memory location for wifi credentials
 int addr_ssid = 0;         // ssid index
-int addr_password = 20;    // password index
+int addr_password = 40;    // password index
 
 void update_ssid(String ssid, String password, bool reset_eprom) {
   EEPROM.begin(512);
@@ -51,28 +51,20 @@ void update_ssid(String ssid, String password, bool reset_eprom) {
 void read_wifi_credentials() {
   Serial.println("");
   Serial.println("Check writing");
-  String ssid;
-  for (int k = addr_ssid; k < addr_ssid + 20; ++k)
+  char data[512];
+  
+  //for (int k = addr_ssid; k < addr_ssid + 20; ++k)
+  for (int i = 0; i < 512; i++)
   {
-    ssid += char(EEPROM.read(k));
+    data[i] = char(EEPROM.read(i));
   }
-  Serial.print("SSID: ");
-  Serial.println(ssid);
-
-  String password;
-  for (int l = addr_password; l < addr_password + 20; ++l)
-  {
-    password += char(EEPROM.read(l));
-  }
-  Serial.print("PASSWORD: ");
-  Serial.println(password); 
+  Serial.print("EPROM DATA: ");
+  Serial.println(data);
 }
-
 
 /**
  * HOME PAGE
  */
-
 String serverHomePage()
 {
   String htmlPage;
@@ -98,9 +90,39 @@ String serverHomePage()
   return htmlPage;
 }
 
+void parseWifiCreds(String body, char *parsedSSID, char *parsedPassword) {
+  char bodyChar[100];
+  body.toCharArray(bodyChar, sizeof(bodyChar));
+
+  // pars key=value pairs
+  char params[2][50];
+  char delimiter[] = "&";
+  // char *token = strtok(bodyChar, delimiter);
+  strncpy(params[0], strtok(bodyChar, delimiter), sizeof(params[0]));
+  // char *token2 = strtok(NULL, delimiter);
+  strncpy(params[1], strtok(NULL, delimiter), sizeof(params[1]));
+
+  // parse param values from key=value pairs
+  // char parsedParams[2][40];
+  char valDelimiter[] = "=";
+  strtok(params[0], valDelimiter);
+  strncpy(parsedSSID, strtok(NULL, valDelimiter), 40);
+  strtok(params[1], valDelimiter);
+  strncpy(parsedPassword, strtok(NULL, valDelimiter), 40);
+}
+
 void setWifiCredentials() {
-  String postBody = server.arg("plain");
-  Serial.println(postBody);
+//  String postBody = server.arg("plain");
+  char parsedSSID[40];
+  char parsedPassword[40];
+  parseWifiCreds(server.arg("plain"), parsedSSID, parsedPassword);
+  Serial.println("SSID -> ");
+  Serial.println(parsedSSID);
+  Serial.println("PASS -> ");
+  Serial.println(parsedPassword);
+  update_ssid(parsedSSID, parsedPassword, true);
+  read_wifi_credentials();
+  server.send(200, "text/plain", F("Success"));
 }
 
 /**
@@ -127,7 +149,7 @@ void setup(){
   IPAddress IP = WiFi.softAPIP();
   Serial.println("AP IP address: ");
   Serial.println(IP);
-  Serial.println(WiFi.localIP());
+  read_wifi_credentials();
   
   restServerRouting();
   server.begin();
