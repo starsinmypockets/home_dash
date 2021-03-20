@@ -47,12 +47,10 @@ void update_ssid(String ssid, String password, bool reset_eprom) {
   }
 }
 
-void read_wifi_credentials() {
+void read_wifi_credentials(char *ssid, char *pw) {
   EEPROM.begin(512);
   Serial.println("");
   Serial.println("Check writing");
-  char ssid[40];
-  char pw[40];
 
   for (int i = 0; i < 40; i++)
   {
@@ -118,7 +116,7 @@ String serverHomePage()
   return htmlPage;
 }
 
-void parseWifiCreds(String body, char *parsedSSID, char *parsedPassword) {
+void parseWifiCreds(String body, char* parsedSSID, char* parsedPassword) {
   char bodyChar[100];
   body.toCharArray(bodyChar, sizeof(bodyChar));
 
@@ -148,7 +146,6 @@ void setWifiCredentials() {
   Serial.println("PASS -> ");
   Serial.println(parsedPassword);
   update_ssid(parsedSSID, parsedPassword, true);
-  read_wifi_credentials();
   server.send(200, "text/plain", F("Success"));
 }
 
@@ -163,23 +160,34 @@ void restServerRouting() {
     server.on(F("/setSSID"), HTTP_POST, setWifiCredentials);
 }
 
-String ssid = "esp8266.local";
+String ap_ssid = "esp8266.local";
 /**
  * SETUP
  */
 void setup(){
   Serial.begin(115200);  
   Serial.print("Setting AP (Access Point)…");
+  char creds[2][40];
+  char ssid[40];
+  char pw[40];
+  
+  read_wifi_credentials(ssid, pw);
+  Serial.println("Connect to wifi");
+  Serial.println(ssid);
+  Serial.println(pw);  
+  WiFi.begin(ssid, pw);
 
-  WiFi.softAP(ssid);
-
-  IPAddress IP = WiFi.softAPIP();
-  Serial.println("AP IP address: ");
-  Serial.println(IP);
-  restServerRouting();
-  server.begin();
-
-  read_wifi_credentials();
+  if (testWifi() == false) {
+    WiFi.softAP(ap_ssid);
+    IPAddress IP = WiFi.softAPIP();
+    Serial.println("AP IP address: ");
+    Serial.println(IP);
+    restServerRouting();
+    server.begin();
+  } else {
+     Serial.println("Connected to WIFI ");
+     Serial.print(ssid);
+  }
 }
  
 /**
