@@ -10,9 +10,8 @@ ESP8266WebServer server(80);
 int addr_ssid = 0;         // ssid index
 int addr_password = 40;    // password index
 
-void update_ssid(String ssid, String password, bool reset_eprom) {
+void update_ssid(String ssid, String password, bool reset_eprom) {  
   EEPROM.begin(512);
-  Serial.println("");
   
   if ( reset_eprom ) {
     for (int i = 0; i < 512; i++) {
@@ -23,21 +22,21 @@ void update_ssid(String ssid, String password, bool reset_eprom) {
   }
  
   Serial.println("");
-  Serial.print("Write WiFi SSID at address "); Serial.println(addr_ssid);
+  Serial.print("Write WiFi SSID at address ");
   Serial.print("");
-  for (int i = 0; i < ssid.length(); ++i)
+  for (int i = 0; i < ssid.length(); i++)
   {
     EEPROM.write(addr_ssid + i, ssid[i]);
-    Serial.print(ssid[i]); Serial.print("");
+    Serial.print(ssid[i]);
   }
 
   Serial.println("");
-  Serial.print("Write WiFi Password at address "); Serial.println(addr_password);
+  Serial.print("Write WiFi Password at address ");
   Serial.print("");
-  for (int j = 0; j < password.length(); j++)
+  for (int i = 0; i < password.length(); i++)
   {
-    EEPROM.write(addr_password + j, password[j]);
-    Serial.print(password[j]); Serial.print("");
+    EEPROM.write(addr_password + i, password[i]);
+    Serial.print(password[i]);
   }
 
   Serial.println("");
@@ -49,17 +48,46 @@ void update_ssid(String ssid, String password, bool reset_eprom) {
 }
 
 void read_wifi_credentials() {
+  EEPROM.begin(512);
   Serial.println("");
   Serial.println("Check writing");
-  char data[512];
-  
-  //for (int k = addr_ssid; k < addr_ssid + 20; ++k)
-  for (int i = 0; i < 512; i++)
+  char ssid[40];
+  char pw[40];
+
+  for (int i = 0; i < 40; i++)
   {
-    data[i] = char(EEPROM.read(i));
+    ssid[i] = char(EEPROM.read(i + addr_ssid));
   }
-  Serial.print("EPROM DATA: ");
-  Serial.println(data);
+  
+  Serial.println("EEPROM SSID:");
+  Serial.println(ssid);
+
+  for (int i = 0; i < 40; i++)
+  {
+    pw[i] = char(EEPROM.read(i + addr_password));
+  }
+  
+  Serial.println("EEPROM PW:");
+  Serial.println(pw);
+}
+
+
+bool testWifi(void)
+{
+  int c = 0;
+  Serial.println("Waiting for Wifi to connect");
+  while ( c < 20 ) {
+    if (WiFi.status() == WL_CONNECTED)
+    {
+      return true;
+    }
+    delay(500);
+    Serial.print("*");
+    c++;
+  }
+  Serial.println("");
+  Serial.println("Connect timed out, opening AP");
+  return false;
 }
 
 /**
@@ -112,7 +140,6 @@ void parseWifiCreds(String body, char *parsedSSID, char *parsedPassword) {
 }
 
 void setWifiCredentials() {
-//  String postBody = server.arg("plain");
   char parsedSSID[40];
   char parsedPassword[40];
   parseWifiCreds(server.arg("plain"), parsedSSID, parsedPassword);
@@ -143,16 +170,16 @@ String ssid = "esp8266.local";
 void setup(){
   Serial.begin(115200);  
   Serial.print("Setting AP (Access Point)…");
-  
+
   WiFi.softAP(ssid);
 
   IPAddress IP = WiFi.softAPIP();
   Serial.println("AP IP address: ");
   Serial.println(IP);
-  read_wifi_credentials();
-  
   restServerRouting();
   server.begin();
+
+  read_wifi_credentials();
 }
  
 /**
