@@ -2,13 +2,21 @@
 #include <Arduino.h>
 #include <ESP8266WiFi.h>
 #include <ESP8266WebServer.h>
-#include <EEPROM.h> 
+#include <ESP8266HTTPClient.h>
+#include <EEPROM.h>
+#include "Adafruit_PM25AQI.h"
+#include <SoftwareSerial.h> // required for communication w pm2.5 sensor
 
 ESP8266WebServer server(80);
 
 // setup memory location for wifi credentials
 int addr_ssid = 0;         // ssid index
 int addr_password = 40;    // password index
+
+// setup pm2.5 comms
+Adafruit_PM25AQI aqi = Adafruit_PM25AQI();
+SoftwareSerial pmSerial(2, 3);
+const char API_KEY[] = "Z%jlvM8ETg7uerF5*^C";
 
 void update_ssid(String ssid, String password, bool reset_eprom) {  
   EEPROM.begin(512);
@@ -160,6 +168,115 @@ void restServerRouting() {
     server.on(F("/setSSID"), HTTP_POST, setWifiCredentials);
 }
 
+void setupPM25AQI() {
+  Serial.println(" ");
+  Serial.println("Setup Adafruit PMSA003I Air Quality Sensor");
+
+  // Wait one second for sensor to boot up!
+  delay(1000);
+
+  // If using serial, initialize it and set baudrate before starting!
+  // Uncomment one of the following
+  //Serial1.begin(9600);
+  pmSerial.begin(9600);
+
+  // There are 3 options for connectivity!
+  //if (! aqi.begin_I2C()) {      // connect to the sensor over I2C
+  //if (! aqi.begin_UART(&Serial1)) { // connect to the sensor over hardware serial
+  if (! aqi.begin_UART(&pmSerial)) { // connect to the sensor over software serial
+    Serial.println("Could not find PM 2.5 sensor!");
+    while (1) delay(10);
+  }
+
+  Serial.println("PM25 found!");
+}
+
+void takePM25Reading() {
+  PM25_AQI_Data data;
+
+  if (! aqi.read(&data)) {
+    Serial.println("Could not read from AQI");
+    delay(500);  // try again in a bit!
+    return;
+  }
+
+  Serial.println("AQI reading success");
+
+  Serial.println();
+  Serial.println(F("---------------------------------------"));
+  Serial.println(F("Concentration Units (standard)"));
+  Serial.println(F("---------------------------------------"));
+  Serial.println(F("PM 1.0: ")); Serial.print(data.pm10_standard);
+  Serial.println(F("\t\tPM 2.5: ")); Serial.print(data.pm25_standard);
+  Serial.println(F("\t\tPM 10: ")); Serial.println(data.pm100_standard);
+
+  // More granular readings:
+  /*
+    Serial.println(F("Concentration Units (environmental)"));
+    Serial.println(F("---------------------------------------"));
+    Serial.print(F("PM 1.0: ")); Serial.print(data.pm10_env);
+    Serial.print(F("\t\tPM 2.5: ")); Serial.print(data.pm25_env);
+    Serial.print(F("\t\tPM 10: ")); Serial.println(data.pm100_env);
+    Serial.println(F("---------------------------------------"));
+    Serial.print(F("Particles > 0.3um / 0.1L air:")); Serial.println(data.particles_03um);
+    Serial.print(F("Particles > 0.5um / 0.1L air:")); Serial.println(data.particles_05um);
+    Serial.print(F("Particles > 1.0um / 0.1L air:")); Serial.println(data.particles_10um);
+    Serial.print(F("Particles > 2.5um / 0.1L air:")); Serial.println(data.particles_25um);
+    Serial.print(F("Particles > 5.0um / 0.1L air:")); Serial.println(data.particles_50um);
+    Serial.print(F("Particles > 10 um / 0.1L air:")); Serial.println(data.particles_100um);
+    Serial.println(F("---------------------------------------"));
+  */
+  char pm10[100];
+  char pm25[100];
+  char pm100[100];
+
+  sprintf(pm10, "[{\"name\":\"Office\",\"type\":\"PM1\",\"units\":\"PM1\",\"value\":\"%u\"}]", data.pm10_standard);
+  sprintf(pm25, "[{\"name\":\"Office\",\"type\":\"PM25\",\"units\":\"PM25\",\"value\":\"%u\"}]", data.pm25_standard);
+  sprintf(pm100, "[{\"name\":\"Office\",\"type\":\"PM10\",\"units\":\"PM10\",\"value\":\"%u\"}]", data.pm100_standard);
+  Serial.println(pm10);
+  Serial.println(pm25);
+  Serial.println(pm100);
+
+  HTTPClient http;
+
+  /* Send PM1 */
+  http.begin("http://pjwalker.net:8099/api/new");
+  http.addHeader("Content-Type", "application/json");
+  http.addHeader("Authorization", API_KEY);
+
+  int httpCode = http.POST(pm10);
+  String payload = http.getString();      
+
+  Serial.println(httpCode);
+  Serial.println(payload);
+
+  /* Send PM2.5 */
+  http.begin("http://pjwalker.net:8099/api/new");
+  http.addHeader("Content-Type", "application/json");
+  http.addHeader("Authorization", API_KEY);
+
+  int httpCode2 = http.POST(pm25);
+  String payload2 = http.getString();
+
+  Serial.println(httpCode2);
+  Serial.println(payload2);
+
+  http.end();
+
+  /* Send PM10 */
+  http.begin("http://pjwalker.net:8099/api/new");      //Specify request destination
+  http.addHeader("Content-Type", "application/json");  //Specify content-type header
+  http.addHeader("Authorization", API_KEY);
+
+  int httpCode3 = http.POST(pm100);   //Send the request
+  String payload3 = http.getString();                  //Get the response payload
+
+  Serial.println(httpCode3);   //Print HTTP return code
+  Serial.println(payload3);    //Print request response payload
+
+  http.end();  //Close connection
+}
+
 String ap_ssid = "esp8266.local";
 /**
  * SETUP
@@ -188,6 +305,8 @@ void setup(){
      Serial.println("Connected to WIFI ");
      Serial.print(ssid);
   }
+  
+  setupPM25AQI();
 }
  
 /**
@@ -195,4 +314,7 @@ void setup(){
  */
 void loop(){
   server.handleClient();
+  takePM25Reading();
+  delay(300000); // five minutes
+//  delay(10000); // ten seconds
 }
