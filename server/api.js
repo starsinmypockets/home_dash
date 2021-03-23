@@ -1,3 +1,5 @@
+#!/usr/bin/env /root/.nvm/versions/node/v12.20.0/bin/node
+
 const express = require("express");
 const bodyParser = require("body-parser")
 const app = express()
@@ -9,7 +11,8 @@ const FileStore = require('session-file-store')(session)
 const passport = require('passport')
 const Strategy = require('passport-local').Strategy;
 const { Record, getRecordsByInterval, getCurrentValues, User } = require("./db.js")
-const LocalStrategy = require('passport-local').Strategy;
+const LocalStrategy = require('passport-local').Strategy
+const HeaderAPIKeyStrategy = require('passport-headerapikey').HeaderAPIKeyStrategy
 const { SESSION_SECRET } = conf.parsed
 
 app.use(bodyParser.json())
@@ -46,6 +49,24 @@ passport.use(new LocalStrategy(async (username, password, done) => {
     return done(err)
   }
 }))
+
+passport.use(new HeaderAPIKeyStrategy(
+  { header: 'Authorization' }, false,
+  async (apikey, done) => {
+    try {
+      console.log("Strategy APIKEY", apikey)
+      if (!apikey) return done(err)
+      const user = await User.findOne({ where: { apiKey: apikey } }, function (err, user) {
+        if (err) { return done(err) }
+        if (!user) { return done(null, false) }
+      })
+      console.log(user)
+      return done(null, user)
+    } catch (err) {
+      return done(err)
+    }
+  }
+))
 
 passport.serializeUser(function(user, done) {
   try {
@@ -141,19 +162,23 @@ app.get("/api/current", async (req, res) => {
 
 // Create new records
 // **NOTE** always use array of records [{...record},...]
-// TODO need to figure out auth for device
-app.post("/api/new", async (req, res) => {
-  if (req.isAuthenticated()) {
-    const Record = Model.Record
+app.post("/api/new", passport.authenticate('headerapikey', { session: false }), async (req, res) => {
+  const recorded = new Date().getTime()
+  const records = req.body.map(record => {
+    return Object.assign({}, record, { recorded, userId: req.user.id })
+  })
 
+  if (req.isAuthenticated()) {
+    console.log('API KEY Auth Successful')
     try {
-      await Record.bulkCreate(req.body)
+      await Record.bulkCreate(records)
       return res.json({ success: true })
     } catch (e) {
       console.error("Failed to create Record", e)
       return req.error("Failed to create Record " + e)
     }
   } else {
+    console.log('API KEY Auth NOT Successful')
     console.log('NOT AUTHENTICATED')
     res.json([])
   }
